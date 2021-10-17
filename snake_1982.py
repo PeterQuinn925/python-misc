@@ -148,14 +148,22 @@ class App:
             print("You lose!")
             self.on_render()
             self._running = False
+            score = len(self.player1.x)
             exit()
         if self.game.isCollision(self.player2,self.player1):
             print("You win!")
             self.on_render()
             self._running = False
+            score = 100000
             exit()
-        pass
- 
+        #special case of both heads in the same place. Arbitrary, Player 1 loses
+        head = len(self.player1.x)-1
+        if self.player1.x[head] == self.player2.x[head] and self.player1.y[head] == self.player2.y[head]:
+            print("You Lose!")
+            score = head
+            self._running = False
+            exit()
+            
     def on_render(self):
         #print("on render")
         self._display_surf.fill((0,0,0))
@@ -209,57 +217,55 @@ class App:
             self._running = False
  
         while( self._running ):
-            pygame.event.pump()
-            keys = pygame.key.get_pressed() 
- 
-            if (keys[K_RIGHT]):
-                if self.player1.direction !=1:
-                   self.player1.moveRight()
- 
-            if (keys[K_LEFT]):
-                if self.player1.direction !=0:
-                   self.player1.moveLeft()
- 
-            if (keys[K_UP]):
-                if self.player1.direction !=3:
-                   self.player1.moveUp()
+           pygame.event.pump()
+           events = pygame.event.get(eventtype=KEYDOWN)
+           #keys = pygame.key.get_pressed()\
+           if len(events)>0:
+               event = events[0]
+               if event.key == pygame.K_RIGHT:
+                  if self.player1.direction !=1:
+                     self.player1.moveRight()
+               if event.key == pygame.K_LEFT:
+                  if self.player1.direction !=0:
+                     self.player1.moveLeft()
+               if event.key == pygame.K_UP:
+                  if self.player1.direction !=3:
+                     self.player1.moveUp()
+               if event.key == K_DOWN:
+                  if self.player1.direction !=2:
+                     self.player1.moveDown()
+               if event.key == pygame.K_ESCAPE:
+                   self._running = False
+                        
+           #Keep Player 2 from running into a wall if it can avoid it
+           if self.willCollide(self.player2,self.player1,self.player2.direction):
+             # turn randomly
+             if self.player2.direction == 0 or self.player2.direction == 1:#moving horz
+                if random.getrandbits(1):
+                    if not self.willCollide(self.player2,self.player1,2): #if it won't collide in this direction
+                       self.player2.direction = 2
+                    else: #if it will collide go the other way
+                       self.player2.direction = 3
+                else:
+                    if not self.willCollide(self.player2,self.player1,3): #if it won't collide in this direction
+                       self.player2.direction = 3
+                    else: #if it will collide go the other way
+                       self.player2.direction = 2
+             else:#moving vert
+                if random.getrandbits(1):
+                   if not self.willCollide(self.player2,self.player1,0):
+                      self.player2.direction = 0
+                   else: 
+                      self.player2.direction = 1
+                else:
+                   if not self.willCollide(self.player2,self.player1,1):
+                      self.player2.direction = 1
+                   else:
+                      self.player2.direction = 0
 
-            if (keys[K_DOWN]):
-                if self.player1.direction !=2:
-                   self.player1.moveDown()
- 
-            if (keys[K_ESCAPE]):
-                self._running = False
-            #Keep Player 2 from running into a wall if it can avoid it
-            if self.willCollide(self.player2,self.player1,self.player2.direction):
-               # turn randomly
-               if self.player2.direction == 0 or self.player2.direction == 1:#moving horz
-                  if random.getrandbits(1):
-                      if not self.willCollide(self.player2,self.player1,2): #if it won't collide in this direction
-                         self.player2.direction = 2
-                      else: #if it will collide go the other way
-                         self.player2.direction = 3
-                  else:
-                      if not self.willCollide(self.player2,self.player1,3): #if it won't collide in this direction
-                         self.player2.direction = 3
-                      else: #if it will collide go the other way
-                         self.player2.direction = 2
-               else:#moving vert
-                  if random.getrandbits(1):
-                     if not self.willCollide(self.player2,self.player1,0):
-                        self.player2.direction = 0
-                     else: 
-                        self.player2.direction = 1
-                  else:
-                     if not self.willCollide(self.player2,self.player1,1):
-                        self.player2.direction = 1
-                     else:
-                        self.player2.direction = 0
-
-            self.on_loop()            
-            self.on_render()
-
-            time.sleep (50.0 / 1000.0);
+           self.on_loop()            
+           self.on_render()
+           time.sleep (50.0 / 1000.0);
         self.on_cleanup()
  
 if __name__ == "__main__" :
