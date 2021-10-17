@@ -1,0 +1,6 @@
+Fitness = score
+outpurt - keypresses, up, down, left, right, only 2
+input = player1, player2 (x,y)
+
+
+need data based input version of snake. devise a simple data format (list of integers between 0 and 4 should work)
