@@ -1,7 +1,7 @@
 model = 'gpt-oss:20b'
 #model = 'gemma3:27b'
 #model = 'qwen3:14b'
-temperature = 1.2
+temperature = 1.0
 
 
 import subprocess
@@ -23,6 +23,7 @@ def play_zork():
     """
     # Start the frotz process with the game file
 #         ['frotz', 'zork_285.z5'],
+    global temperature
     proc = subprocess.Popen(
         ['snap', 'run','zork'],
         stdin=subprocess.PIPE,
@@ -77,6 +78,7 @@ def play_zork():
     reader_thread.join(timeout=1)
 import ollama
 def setup_ollama(model,prompt):
+    global temperature
     response = ollama.chat(
     model=model,
     messages=[{'role': 'system', 'content': prompt}],
