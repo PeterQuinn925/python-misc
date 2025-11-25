@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Mazewar Bot for PDP-10 ITS 
-Bot navigates maze
+Mazewar Bot for PDP-10 ITS System
+
 TODO:
-Improve navigation to avoid getting stuck in loops
 Test/handle being shot
 Enable more than one bot
 Enable shooting the humans
+Automate everything - kiosk mode?
+
 """
 
 import telnetlib
@@ -130,6 +131,7 @@ class MazewarBot:
         # Navigation
         self.visited = set()
         self.move_history = []
+        self.loop_counter = 0 #used to determine if we're in a loop
         
     def log(self, message, level="INFO"):
         """Print log message if verbose mode enabled"""
@@ -307,7 +309,6 @@ class MazewarBot:
         """Start the Mazewar game and parse the maze"""
         self.log(f"Starting Mazewar from {self.game_dir}...")
         
-        # Kill any existing instance
         self.send_command(":TCTYPE OIMLAC")
         time.sleep(0.5)
         self.wait_for_response(1.0)
@@ -430,6 +431,12 @@ class MazewarBot:
         dx, dy = [(0, -1), (1, 0), (0, 1), (-1, 0)][self.facing]
         self.pos_x += dx
         self.pos_y += dy
+        if (self.pos_x, self.pos_y) in self.visited:
+            #already been here. Add to the consectutive visited spaces counter
+            self.loop_counter = self.loop_counter +1
+        else:
+            #haven't been here before, reset loop counter to 0
+            self.loop_counter = 0
         self.visited.add((self.pos_x, self.pos_y))
         self.move_history.append('F')
         self.log(f"Moved to ({self.pos_x}, {self.pos_y})", "DEBUG")
@@ -468,34 +475,62 @@ class MazewarBot:
         # 2. If can't, try to move forward
         # 3. If can't, try to turn left
         # 4. If can't, turn around
-        
-        # First check right
-        self.turn_right()
-        if self.can_move_forward():
-            self.move_forward()
-            return "turned right and moved forward"
-        
-        # Can't go right, try straight
-        self.turn_left()  # Undo the right turn
-        if self.can_move_forward():
-            self.move_forward()
-            return "moved forward"
-        
-        # Can't go straight, try left
-        self.turn_left()
-        if self.can_move_forward():
-            self.move_forward()
-            return "turned left and moved forward"
-        
-        # Can't go left, turn around
-        self.turn_left()
-        if self.can_move_forward():
-            self.move_forward()
-            return "turned around and moved forward"
-        
-        # Completely stuck (shouldn't happen in valid maze)
-        self.log("WARNING: Stuck in all directions!", "WARN")
-        return "stuck"
+        # except if the loop_counter says we've gone over the same cells already n times
+        if self.loop_counter < 5:
+            # First check right
+            self.turn_right()
+            if self.can_move_forward():
+                self.move_forward()
+                return "turned right and moved forward"
+              
+            # Can't go right, try straight
+            self.turn_left()  # Undo the right turn
+            if self.can_move_forward():
+                self.move_forward()
+                return "moved forward"
+                
+            # Can't go straight, try left
+            self.turn_left()
+            if self.can_move_forward():
+                self.move_forward()
+                return "turned left and moved forward"
+                
+            # Can't go left, turn around
+            self.turn_left()
+            if self.can_move_forward():
+                self.move_forward()
+                return "turned around and moved forward"
+                
+            # Completely stuck (shouldn't happen in valid maze)
+            self.log("WARNING: Stuck in all directions!", "WARN")
+            return "stuck"
+        else:
+            self.loop_counter = 0 # reset the loop counter
+            # this time we're preferentially going forward or turning left
+            # try straight
+            if self.can_move_forward():
+                self.move_forward()
+                return "moved forward"
+            # Can't go straight, try left
+            self.turn_left()
+            if self.can_move_forward():
+                self.move_forward()
+                return "turned left and moved forward"
+            # check right
+            self.turn_right() # undo left
+            self.turn_right()
+            if self.can_move_forward():
+                self.move_forward()
+                return "turned right and moved forward"
+            # Can't go left, turn around
+            self.turn_right() # second right turn to make a U
+            if self.can_move_forward():
+                self.move_forward()
+                return "turned around and moved forward"
+                
+            # Completely stuck (shouldn't happen in valid maze)
+            self.log("WARNING: Stuck in all directions!", "WARN")
+            return "stuck"
             
     def play(self, duration=300):
         """Main game loop with navigation"""
@@ -574,7 +609,7 @@ class MazewarBot:
 def main():
     """Example usage"""
     botnum = random.randint(1, 100)
-    HOST = "10.0.0.34"
+    HOST = "localhost"
     PORT = 10003
     USERNAME = "BOT" + str(botnum)
     PLAYER_NUMBER = 1  # Bot is typically the second player (index 1)
@@ -600,9 +635,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
