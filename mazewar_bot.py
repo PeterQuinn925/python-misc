@@ -3,7 +3,6 @@
 Mazewar Bot for PDP-10 ITS System
 
 TODO:
-Test/handle being shot
 Enable more than one bot
 Enable shooting the humans
 Automate everything - kiosk mode?
@@ -116,6 +115,7 @@ class MazewarBot:
         self.verbose = verbose
         self.player_number = player_number  # Which player are we? (0=first, 1=second, etc.)
         self.player_id = player_number + 1  # Player ID (1-based)
+        self.game_data = "" # responses back from the PDP-10 during game play
         
         # Maze state - actual maze is 16 columns x 32 rows (per assembly code)
         # Assembly: AND [17'] for X = 0-15, AND [37'] for Y = 0-31
@@ -188,9 +188,10 @@ class MazewarBot:
         try:
             data = self.tn.read_very_eager().decode('latin-1', errors='ignore')
             if data:
-                self.terminal.process_string(data)
+                #self.terminal.process_string(data)
+                self.game_data = data
+#                print(self.game_data)
                 return True
-            return False
         except Exception as e:
             self.log(f"Error reading screen: {e}", "ERROR")
             return False
@@ -358,11 +359,6 @@ class MazewarBot:
         self.log("Sending spawn position protocol messages...", "DEBUG")
         self.send_spawn_message()
         
-        # Send Control-J (Line Feed) and Control-C as in original
-        self.log("Sending startup control characters...", "DEBUG")
-        #self.tn.write(b'\x0a')  # Control-J (Line Feed)
-        time.sleep(0.5)
-        #self.tn.write(b'\x03')  # Control-C
         time.sleep(0.5)
         self.wait_for_response(1.0)
         
@@ -550,19 +546,26 @@ class MazewarBot:
             while time.time() - start_time < duration:
                 # Read any data from server
                 self.read_and_update_screen()
+                # Have I been shot?
+                if len(self.game_data) > 1 and self.game_data[0] == "\x03": #should be shot
+                    self.log("Oh no! I've been shot!","DEBUG")
+                    #go back to the starting point and restart everything
+                    spawn_info = self.SPAWN_POSITIONS[self.player_number]
+                    protocol_x, protocol_y, self.facing = spawn_info
+                    self.pos_x = protocol_x
+                    self.pos_y = protocol_y
+                    self.game_data = ""
+                    self.visited.clear # reset the visited spaces
+                    self.send_spawn_message() #go back to the original position
+                else:
+                    # Make a move
+                    action = self.explore_maze()
+                    move_count += 1
                 
-                # Make a move
-                action = self.explore_maze()
-                move_count += 1
+                    self.log(f"Move {move_count}: {action} at ({self.pos_x},{self.pos_y}) facing {['N','E','S','W'][self.facing]}")
                 
-                self.log(f"Move {move_count}: {action} at ({self.pos_x},{self.pos_y}) facing {['N','E','S','W'][self.facing]}")
-                
-                # Small delay between moves
-                time.sleep(0.5)
-                
-                # Read response
-                self.read_and_update_screen()
-                time.sleep(0.3)
+                    # Small delay between moves
+                    time.sleep(0.5)
                     
         except KeyboardInterrupt:
             self.log("\nBot stopped by user")
@@ -614,7 +617,7 @@ def main():
     USERNAME = "BOT" + str(botnum)
     PLAYER_NUMBER = 1  # Bot is typically the second player (index 1)
     
-    print("=== Mazewar PDP-10 Bot with Correct Maze Parsing ===\n")
+    print("=== Mazewar PDP-10 Bot ===\n")
     
     bot = MazewarBot(HOST, PORT, USERNAME, player_number=PLAYER_NUMBER)
     
