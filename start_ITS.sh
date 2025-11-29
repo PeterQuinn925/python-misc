@@ -13,22 +13,27 @@ xdotool windowactivate $imlac
 xdotool key ctrl+z
 sleep 5
 d=200 ###delay between keystrokes
+xdotool windowactivate $imlac #redo this each command in case a user clicks away
 xdotool type --window $imlac --delay $d ':LOGIN LARS'
 xdotool key 0xff0d ###carriage return
 sleep 1
+xdotool windowactivate $imlac
 xdotool type --window $imlac --delay $d ':TCTYPE OIMLAC'
 xdotool key 0xff0d
 sleep 1
+xdotool windowactivate $imlac
 xdotool type --window $imlac --delay $d ':CWD GAMES'
 xdotool key 0xff0d
 sleep 1
+xdotool windowactivate $imlac
 xdotool type --window $imlac --delay $d ':RUN MAZE C'
 xdotool key 0xff0d
+xdotool windowactivate $imlac
 sleep 2
+xdotool windowactivate $imlac
 xdotool key 0xff0d #### return to accept default maze
 sleep 10
 #should now be looking at the map of the maze
+xdotool windowactivate $imlac
 xdotool key Right
-sleep 5
-xdotool key Right
-#should now be looking at the maze
+#done. Now in the maze
