@@ -1,3 +1,11 @@
+#!/bin/bash
+# Script to start Mazewar
+# 1) Stops running PDP-10 emulator if running
+# 2) Starts PDP-10 Emulator ready for loading ITS
+# 3) Starts ITS
+# 4) Starts Imlac smart terminal, logs in, and runs Mazewar
+
+sleep 10
 pdpcontrol stop
 sleep 10
 pdpcontrol start 1
@@ -5,11 +13,11 @@ sleep 20
 echo "its" | ncat localhost 1025
 echo -e "\eG" | ncat localhost 1025
 sleep 20
-pdp imlac
+pdp imlac 
 sleep 10
 imlac=$(xdotool search --name 'Imlac - CRT - Imlac Display')
 xdotool windowactivate $imlac
-#xdotool key 0xff1a
+
 xdotool key ctrl+z
 sleep 5
 d=200 ###delay between keystrokes
@@ -37,3 +45,5 @@ sleep 10
 xdotool windowactivate $imlac
 xdotool key Right
 #done. Now in the maze
+#sleep forever, otherwise the imlac terminal will be killed
+sleep infinity
