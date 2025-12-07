@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 # Script to start Mazewar
 # 1) Stops running PDP-10 emulator if running
 # 2) Starts PDP-10 Emulator ready for loading ITS
@@ -14,15 +14,19 @@ echo "its" | ncat localhost 1025
 echo -e "\eG" | ncat localhost 1025
 sleep 20
 pdp imlac 
-sleep 10
+sleep 5
 imlac=$(xdotool search --name 'Imlac - CRT - Imlac Display')
+while [ -z "imlac" ]; do #wait until there is a window
+    sleep 2
+    imlac=$(xdotool search --name 'Imlac - CRT - Imlac Display')    
+done
+echo $imlac
 xdotool windowactivate $imlac
-
 xdotool key ctrl+z
 sleep 5
 d=200 ###delay between keystrokes
 xdotool windowactivate $imlac #redo this each command in case a user clicks away
-xdotool type --window $imlac --delay $d ':LOGIN LARS'
+xdotool type --window $imlac --delay $d ':LOGIN MADE'
 xdotool key 0xff0d ###carriage return
 sleep 1
 xdotool windowactivate $imlac
@@ -44,6 +48,13 @@ sleep 10
 #should now be looking at the map of the maze
 xdotool windowactivate $imlac
 xdotool key Right
+#xdotool key F11 #make full screen
 #done. Now in the maze
+#start bots
+python3 /home/pi/mazewar_bot.py &
+sleep 30
+python3 /home/pi/mazewar_bot.py &
+sleep 30
+python3 /home/pi/mazewar_bot.py &
 #sleep forever, otherwise the imlac terminal will be killed
 sleep infinity
