@@ -1,0 +1,14 @@
+[Unit]
+Description=Service to start PDP-10 emulation, load ITS, and then Mazewar
+After=graphical-session.target
+#PartOf=graphical-session.target
+
+[Service]
+Type=exec
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/pi/.Xauthority"
+ExecStart=/home/pi/start_ITS.sh
+Restart=no
+
+[Install]
+WantedBy=default.target
